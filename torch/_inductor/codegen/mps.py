@@ -207,17 +207,41 @@ class MetalExprPrinter(ExprPrinter_):
         x = self.doprint(expr.args[0])
         return f"static_cast<int>(metal::trunc({x}))"
 
-    def _print_OpaqueUnaryFn_log2(self, expr: sympy.Expr) -> str:
+    def _helper_sqrt(self, expr: sympy.Expr) -> str:
+        x = self.doprint(expr)
+        return f"metal::precise::sqrt(static_cast<float>({x}))"
+
+    def _print_opaque_unary_fn(self, expr: sympy.Expr, op: str) -> str:
         if len(expr.args) != 1:
             raise AssertionError(f"expected 1 arg, got {len(expr.args)}")
         x = self.doprint(expr.args[0])
-        return f"metal::precise::log2({x})"
+        return f"metal::precise::{op}(static_cast<float>({x}))"
 
     def _print_Where(self, expr: sympy.Expr) -> str:
         c, p, q = (
             self.parenthesize(arg, PRECEDENCE["Atom"] - 0.5) for arg in expr.args
         )
         return f"{c} ? {p} : {q}"
+
+
+for _op in (
+    "sqrt",
+    "cos",
+    "cosh",
+    "sin",
+    "sinh",
+    "tan",
+    "tanh",
+    "asin",
+    "acos",
+    "atan",
+    "log2",
+):
+    setattr(
+        MetalExprPrinter,
+        f"_print_OpaqueUnaryFn_{_op}",
+        functools.partialmethod(MetalExprPrinter._print_opaque_unary_fn, op=_op),
+    )
 
 
 class MetalOverrides(OpOverrides):

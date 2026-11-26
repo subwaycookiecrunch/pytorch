@@ -15058,6 +15058,35 @@ def forward(self, arg0_1: "Sym(s77)", arg1_1: "Sym(s27)", arg2_1: "Sym(s53)", ar
             ],
         )
 
+    @parametrize(
+        "op_name",
+        (
+            "sqrt",
+            "cos",
+            "cosh",
+            "sin",
+            "sinh",
+            "tan",
+            "tanh",
+            "asin",
+            "acos",
+            "atan",
+            "log2",
+        ),
+    )
+    def test_dynamic_symbolic_math_ops(self, op_name):
+        op = getattr(math, op_name)
+
+        def fn(x):
+            r, c = x.shape
+            arg = r / (r + c) if op_name in ("asin", "acos") else c / r
+            return x * op(arg)
+
+        cfn = torch.compile(fn, dynamic=True, fullgraph=True)
+        for r in (16, 32):
+            x = torch.ones(r, 4, device=self.device)
+            self.assertEqual(cfn(x), fn(x))
+
     def test_argmax_min_int32(self):
         # https://github.com/pytorch/pytorch/issues/94055
         def fn(a, b):

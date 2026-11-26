@@ -594,7 +594,7 @@ class CppPrinter(ExprPrinter):
         if len(expr.args) != 1:
             raise AssertionError("sin expects exactly one argument")
         # pyrefly: ignore [missing-attribute]
-        return f"math.sin({self._print(expr.args[0])})"
+        return f"std::sin({self._print(expr.args[0])})"
 
     def _print_OpaqueUnaryFn_sinh(self, expr: sympy.Expr) -> str:
         if len(expr.args) != 1:
