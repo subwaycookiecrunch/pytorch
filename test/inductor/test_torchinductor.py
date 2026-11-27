@@ -15058,6 +15058,19 @@ def forward(self, arg0_1: "Sym(s77)", arg1_1: "Sym(s27)", arg2_1: "Sym(s53)", ar
             ],
         )
 
+    def test_dynamic_symbolic_float_pow(self):
+        def fn_bias_corr(x):
+            return torch.lerp(x, x * 2, 0.05 / (1.0 - 0.95 ** x.shape[0]))
+
+        def fn_frac_exp(x):
+            return torch.lerp(x, x * 2, (x.shape[1] / x.shape[0]) ** 1.5)
+
+        for fn in (fn_bias_corr, fn_frac_exp):
+            cfn = torch.compile(fn, dynamic=True, fullgraph=True)
+            for r, c in ((8, 4), (16, 6)):
+                x = torch.ones(r, c, device=self.device)
+                self.assertEqual(cfn(x), fn(x))
+
     def test_argmax_min_int32(self):
         # https://github.com/pytorch/pytorch/issues/94055
         def fn(a, b):
